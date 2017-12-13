@@ -4,12 +4,15 @@ import threading
 import os
 import shutil
 import webbrowser
+import select
+from ConfigParser import SafeConfigParser
+import subprocess
 
 #inisialisasi
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #proses binding
-server_address = ('localhost', 13000)
+server_address = ('localhost', 14000)
 print >>sys.stderr, 'starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -22,47 +25,8 @@ def response_teks():
 		"Content-Type: text/plain\r\n" \
 		"Content-Length: 7\r\n" \
 		"\r\n" \
-		"PROGJAR"
+		"PROGJAR HTTP Guys "
 	return hasil
-
-def response_no1():
-	files = os.listdir(os.curdir)
-
-	isi = ''
-
-	for f in files:
-		isi += f
-		isi += "\n"
-
-	isi = "<input type=\"text\" name=\"input\" placeholder=\"Masukkan Folder yang akan dipindah\" />"
-
-	panjang = len(isi)
-
-	hasil = "HTTP/1.1 200 OK\r\n" \
-		"Content-Type: text/html\r\n" \
-		"Content-Length: {}\r\n" \
-		"\r\n" \
-		"{}".format(panjang, isi)
-
-	return hasil
-
-def response_no6():
-
-	mydir= ("<input type=\"text\" name=\"input\" id=\"folder\" placeholder=\"Masukkan Folder yang akan dihapus\" /> <input type=\"submit\" value=\"submit\"/> ")
-	panjang = len(mydir)
-
-	try:
-		shutil.rmtree(mydir)
-	except OSError, e:
-		print ("Error: %s - %s." % (e.filename,e.strerror))
-
-	hasil = "HTTP/1.1 200 OK\r\n" \
-		"Content-Type: text/html\r\n" \
-		"Content-Length: {}\r\n" \
-		"\r\n" \
-		"{}" . format(panjang, mydir)
-	return hasil
-
 
 
 def response_gambar():
@@ -107,14 +71,63 @@ def response_list():
 		"{}" . format(panjang, filedokumen)
 	return hasil
 
+
+def download(url):
+	filedokumen = open(url, 'r').read()
+	panjang = len(filedokumen)
+	hasil = "HTTP/1.1 200 OK\r\n" \
+		"Content-Type: application/multipart\r\n" \
+		"Content-Length: {}\r\n" \
+		"\r\n" \
+		"{}" . format(panjang, filedokumen)
+	return hasil
+
+
 def response_list2():
-	filename = "test1"
-	webbrowser.open('file://' + os.path.realpath(filename))
+	path = "./"
+	dirList = os.listdir(path)
+	konten = []
+	for files in dirList:
+			konten.append('<a href="'+format(files)+'">'+format(files)+'</a>')
+	response_data = "<br>".join(konten)
+	print response_data
+	content_length = len(response_data)
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(content_length, response_data)
+	#sock.sendall(response_header + response_data)
+	return response_header
+
+def response_listdir(directory):
+	path = "."+directory
+	dirList = os.listdir(path)
+	konten = []
+	for files in dirList:
+			konten.append('<a href="'+format(files)+'">'+format(files)+'</a>')
+	response_data = "<br>".join(konten)
+	print response_data
+	content_length = len(response_data)
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(content_length, response_data)
+	#sock.sendall(response_header + response_data)
+	return response_header
+
+
 
 def response_redirect():
-	hasil = "HTTP/1.1 301 Moved Permanently\r\n" \
-		"Location: {}\r\n" \
-		"\r\n"  . format('http://www.its.ac.id')
+
+	filedokumen = open('404.html','r').read()
+	panjang = len(filedokumen)
+	hasil = "HTTP/1.1 404 Not Found\r\n" \
+		"Content-Type: text/html\r\n" \
+		"Content-Length: {}\r\n" \
+		"\r\n" \
+		"{}" . format(panjang, filedokumen)
 	return hasil
 
 
@@ -139,19 +152,20 @@ def layani_client(koneksi_client,alamat_client):
 		a,url,c = baris_request.split(" ")
 
 		if (url=='/favicon.ico'):
-			respon = response_icon()
+			respon = response_gambar()
 		elif (url=='/doc'):
 			respon = response_dokumen()
 		elif (url=='/teks'):
 			respon = response_teks()
-		elif (url=='/1'):
-			respon = response_no1()
-		elif (url=='/6'):
-			respon = response_no6()
 		elif (url=='/list'):
 			respon = response_list()
 		elif (url=='/list2'):
 			respon = response_list2()
+		elif os.path.isfile("."+url) == True:
+			buang, masuk = url.split("/")
+			respon = download(masuk)
+		elif os.path.isdir("."+url) == True:
+			respon = response_listdir(url)
 		else:
 			respon = response_redirect()
 
@@ -167,4 +181,5 @@ while True:
 	koneksi_client, alamat_client = sock.accept()
 	s = threading.Thread(target=layani_client, args=(koneksi_client,alamat_client))
 	s.start()
+
 
