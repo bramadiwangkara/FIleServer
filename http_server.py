@@ -12,7 +12,7 @@ import subprocess
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #proses binding
-server_address = ('localhost', 14000)
+server_address = ('localhost', 12000)
 print >>sys.stderr, 'starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -117,7 +117,53 @@ def response_listdir(directory):
 	#sock.sendall(response_header + response_data)
 	return response_header
 
+def mkdir():
+	filedokumen = open('mkdir.html','r').read()
+	panjang = len(filedokumen)
 
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(panjang, filedokumen)
+	return response_header
+
+def mkdirnow(namafolder):
+	os.system("mkdir "+ namafolder)
+	filedokumen = "mkdir " + namafolder + " telah dijalankan :)"
+	panjang = len(filedokumen)
+
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(panjang, filedokumen)
+	#sock.sendall(response_header + response_data)
+	return response_header
+
+def rmdir():
+	filedokumen = open('rmdir.html','r').read()
+	panjang = len(filedokumen)
+
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(panjang, filedokumen)
+	return response_header
+
+def rmdirnow(namafolder):
+	os.system("rm -rf "+ namafolder)
+	filedokumen = "rmdir " + namafolder + " telah dijalankan :)"
+	panjang = len(filedokumen)
+
+	response_header = "HTTP/1.1 200 OK\r\n" \
+					"Content-Type: text/html\r\n" \
+					"Content-Length:{}\r\n" \
+					"\r\n" \
+					"{}" . format(panjang, filedokumen)
+	#sock.sendall(response_header + response_data)
+	return response_header
 
 def response_redirect():
 
@@ -151,6 +197,15 @@ def layani_client(koneksi_client,alamat_client):
 
 		a,url,c = baris_request.split(" ")
 
+		
+		print "ini a " + a + "\n"
+		print "ini url " + url + "\n"
+		print "ini c " + c + "\n"
+
+		alamat1 = url.split("?")
+		print "alamat1 " , alamat1 , "\n"
+#		print "alamat2 " + alamat2 + "\n"
+
 		if (url=='/favicon.ico'):
 			respon = response_gambar()
 		elif (url=='/doc'):
@@ -161,6 +216,18 @@ def layani_client(koneksi_client,alamat_client):
 			respon = response_list()
 		elif (url=='/list2'):
 			respon = response_list2()
+		elif (url=='/makefolder.me'):
+			respon = mkdir()
+		elif (url=='/removefolder.me'):
+			respon = rmdir()
+		elif (alamat1[0]=='/buatfolder'):
+			namafolder = alamat1[1]
+			test, masuk = namafolder.split("=")
+			respon = mkdirnow(masuk)
+		elif (alamat1[0]=='/hapusfolder'):
+			namafolder = alamat1[1]
+			test, masuk = namafolder.split("=")
+			respon = rmdirnow(masuk)
 		elif os.path.isfile("."+url) == True:
 			buang, masuk = url.split("/")
 			respon = download(masuk)
