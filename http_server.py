@@ -17,7 +17,7 @@ import subprocess
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #proses binding
-server_address = ('10.151.253.114', 12000)
+server_address = ('10.151.253.114', 11000)
 print >>sys.stderr, 'starting up on %s port %s' % server_address
 sock.bind(server_address)
 
@@ -248,44 +248,6 @@ def response_redirect():
 	return hasil
 
 
-def response_upload3(req):
-	#formData = cgi.FieldStorage()
-	#print formData
-	a,req=req.split("name=\"fileToUpload\"; ")
-	#req,a,c=req.split(" -----------------------------")
-	req=req.split("-----------------------------")	
-	b=req[0].split("Content-Type: ")
-	#get isi
-	x=b[1].split("\n\r")
-	print len(x)
-	print "menghilangkan content type"
-	print x
-	#menciptakan judul
-	now = datetime.datetime.now()
-	now = str(now)
-	now = now.replace(".","")
-	now = now.replace(" ","")
-	a=b[0].split("Content-Type: ")
-	flnm=a[0].split("filename=\"")
-	flnm=flnm=flnm[1].split("\"")
-	flnm=now+flnm[0]
-	print flnm
-	file = open(flnm,"w")
-	for xy in range(len(x)):
-		if xy!=0:
-			print "print"
-			file.write(x[xy])
-	file.close()
-	#b[1]isi file
-	msg="Sukses"
-	panjang = len(msg)
-	hasil = "HTTP/1.1 200 OK\r\n" \
-		"Content-Type: text/html\r\n" \
-		"Content-Length: {}\r\n" \
-		"\r\n" \
-		"{}".format(panjang, msg)
-	return hasil
-
 
 #fungsi melayani client
 def layani_client(koneksi_client,alamat_client):
@@ -355,8 +317,6 @@ def layani_client(koneksi_client,alamat_client):
 			respon = response_list()
 		elif (url=='/list2'):
 			respon = response_list2()
-		elif (url== '/upload3'):
-			respon = response_upload3(request_message)
 		#elif ('/upload' in url):
 		#	respon = response_upload()
 		elif ('/movedir' in url):
@@ -403,5 +363,3 @@ while True:
 	koneksi_client, alamat_client = sock.accept()
 	s = threading.Thread(target=layani_client, args=(koneksi_client,alamat_client))
 	s.start()
-
-
